@@ -27,7 +27,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-import streamlit.components.v1 as components
 
 # --------------------------------------------------------------------------------------
 # Page config & constants
@@ -51,18 +50,7 @@ CATEGORICAL_VARS = ["Gender", "Exercise Habits", "Smoking", "Family Heart Diseas
 ORDINAL_MAP = {"Low": 0, "Medium": 1, "High": 2}
 BINARY_MAP_COLS = ["Smoking", "Family Heart Disease", "Diabetes", "High Blood Pressure",
                     "Low HDL Cholesterol", "High LDL Cholesterol"]
-
-MANUAL_NUMERIC_LIMITS = {
-    "Age": (18, 100),
-    "Blood Pressure": (80, 220),
-    "Cholesterol Level": (100, 400),
-    "BMI": (15.0, 45.0),
-    "Sleep Hours": (3.0, 12.0),
-    "Triglyceride Level": (50, 600),
-    "Fasting Blood Sugar": (60, 300),
-    "CRP Level": (0.0, 20.0),
-    "Homocysteine Level": (3.0, 25.0),
-}
+REQUIRED_COLUMNS = CONTINUOUS_VARS + CATEGORICAL_VARS + [TARGET]
 
 
 # --------------------------------------------------------------------------------------
@@ -113,22 +101,6 @@ def encode_for_model(row: dict) -> pd.DataFrame:
     return pd.DataFrame([encoded])
 
 
-def validate_manual_record(record: dict) -> list[str]:
-    """Return clear validation messages for invalid manual numeric inputs."""
-    errors = []
-    for field, (minimum, maximum) in MANUAL_NUMERIC_LIMITS.items():
-        value = record[field]
-        if value == -1:
-            errors.append(
-                f"{field} cannot be -1. Enter a value from {minimum} to {maximum}."
-            )
-        elif not minimum <= value <= maximum:
-            errors.append(
-                f"{field} must be between {minimum} and {maximum}; you entered {value}."
-            )
-    return errors
-
-
 model, scaler, FEATURES = load_model()
 metrics = load_metrics()
 
@@ -144,105 +116,58 @@ uploaded_file = st.sidebar.file_uploader(
     help="Must contain the same 20 feature columns as the CardioCare dataset. "
          "If you don't upload a file, the bundled 10,000-patient dataset is used.",
 )
-base_df = pd.read_csv(uploaded_file) if uploaded_file is not None else load_default_data()
+if uploaded_file is not None:
+    try:
+        candidate_df = pd.read_csv(uploaded_file)
+    except Exception as e:
+        st.sidebar.error(f"❌ Couldn't read **{uploaded_file.name}** as a CSV ({e}). Using the bundled dataset instead.")
+        base_df = load_default_data()
+    else:
+        missing_cols = [c for c in REQUIRED_COLUMNS if c not in candidate_df.columns]
+        if missing_cols:
+            shown = ", ".join(missing_cols[:5]) + ("…" if len(missing_cols) > 5 else "")
+            st.sidebar.error(
+                f"❌ **{uploaded_file.name}** doesn't match the expected format — missing column(s): "
+                f"{shown}. Using the bundled dataset instead."
+            )
+            base_df = load_default_data()
+        else:
+            base_df = candidate_df
+            st.sidebar.success(f"✅ **{uploaded_file.name}** uploaded — {len(base_df):,} records loaded.")
+else:
+    base_df = load_default_data()
+    st.sidebar.caption(f"Using the bundled dataset ({len(base_df):,} records).")
 
 if "manual_records" not in st.session_state:
     st.session_state.manual_records = []
 
 with st.sidebar.expander("➕ Add a patient record manually"):
-    with st.form("manual_entry_form", clear_on_submit=False):
-        m_age = st.number_input("Age", min_value=18, max_value=100, value=50, step=1)
+    with st.form("manual_entry_form", clear_on_submit=True):
+        m_age = st.number_input("Age", 18, 100, 50)
         m_gender = st.selectbox("Gender", ["Male", "Female"])
-        m_bp = st.number_input("Blood Pressure", min_value=80, max_value=220, value=130, step=1)
-        m_chol = st.number_input("Cholesterol Level", min_value=100, max_value=400, value=200, step=1)
+        m_bp = st.number_input("Blood Pressure", 80, 220, 130)
+        m_chol = st.number_input("Cholesterol Level", 100, 400, 200)
         m_exercise = st.selectbox("Exercise Habits", ["Low", "Medium", "High"], index=1)
         m_smoking = st.selectbox("Smoking", ["No", "Yes"])
         m_family = st.selectbox("Family Heart Disease", ["No", "Yes"])
         m_diabetes = st.selectbox("Diabetes", ["No", "Yes"])
-        m_bmi = st.number_input("BMI", min_value=15.0, max_value=45.0, value=25.0, step=0.1)
+        m_bmi = st.number_input("BMI", 15.0, 45.0, 25.0, 0.1)
         m_hbp = st.selectbox("High Blood Pressure", ["No", "Yes"])
         m_low_hdl = st.selectbox("Low HDL Cholesterol", ["No", "Yes"])
         m_high_ldl = st.selectbox("High LDL Cholesterol", ["No", "Yes"])
         m_alcohol = st.selectbox("Alcohol Consumption", ["Low", "Medium", "High"], index=1)
         m_stress = st.selectbox("Stress Level", ["Low", "Medium", "High"], index=1)
-        m_sleep = st.number_input("Sleep Hours", min_value=3.0, max_value=12.0, value=7.0, step=0.1)
+        m_sleep = st.number_input("Sleep Hours", 3.0, 12.0, 7.0, 0.1)
         m_sugar = st.selectbox("Sugar Consumption", ["Low", "Medium", "High"], index=1)
-        m_trig = st.number_input("Triglyceride Level", min_value=50, max_value=600, value=150, step=1)
-        m_fbs = st.number_input("Fasting Blood Sugar", min_value=60, max_value=300, value=100, step=1)
-        m_crp = st.number_input("CRP Level", min_value=0.0, max_value=20.0, value=3.0, step=0.1)
-        m_homo = st.number_input("Homocysteine Level", min_value=3.0, max_value=25.0, value=10.0, step=0.1)
+        m_trig = st.number_input("Triglyceride Level", 50, 600, 150)
+        m_fbs = st.number_input("Fasting Blood Sugar", 60, 300, 100)
+        m_crp = st.number_input("CRP Level", 0.0, 20.0, 3.0, 0.1)
+        m_homo = st.number_input("Homocysteine Level", 3.0, 25.0, 10.0, 0.1)
         m_status = st.selectbox("Heart Disease Status (if known)", ["No", "Yes"])
         add_record = st.form_submit_button("Add record to dataset")
 
-    # The browser marks a value outside number_input's min/max limits with a red !,
-    # but it sends Streamlit the previous valid value. Block submission in that case
-    # so that previous/default value can never be added as a new record.
-    components.html(
-        """
-        <script>
-        const parentDocument = window.parent.document;
-        const form = Array.from(parentDocument.querySelectorAll('[data-testid="stForm"]'))
-            .find((item) => item.innerText.includes('Add record to dataset'));
-
-        if (form && !form.dataset.manualRecordValidationBound) {
-            form.dataset.manualRecordValidationBound = 'true';
-            const submitButton = Array.from(form.querySelectorAll('button'))
-                .find((button) => button.innerText.includes('Add record to dataset'));
-            const notice = parentDocument.createElement('div');
-            notice.setAttribute('role', 'alert');
-            notice.style.cssText = [
-                'display:none', 'margin-top:0.5rem', 'padding:0.65rem',
-                'border:1px solid #ff4b4b', 'border-radius:0.35rem',
-                'color:#ff4b4b', 'font-size:0.85rem'
-            ].join(';');
-            form.appendChild(notice);
-
-            const invalidInputs = () => Array.from(form.querySelectorAll('input[type="number"]'))
-                .filter((input) => !input.validity.valid);
-            const fieldName = (input) => input.getAttribute('aria-label') || 'A numeric field';
-
-            const updateValidationState = () => {
-                const invalid = invalidInputs();
-                if (submitButton) submitButton.disabled = invalid.length > 0;
-
-                if (!invalid.length) {
-                    notice.style.display = 'none';
-                    notice.replaceChildren();
-                    return;
-                }
-
-                notice.style.display = 'block';
-                notice.replaceChildren('Record was not added. Please correct:');
-                const reasons = parentDocument.createElement('ul');
-                reasons.style.margin = '0.35rem 0 0 1.15rem';
-                invalid.forEach((input) => {
-                    const item = parentDocument.createElement('li');
-                    item.textContent = `${fieldName(input)} must be between ${input.min} and ${input.max}.`;
-                    reasons.appendChild(item);
-                });
-                notice.appendChild(reasons);
-            };
-
-            form.addEventListener('input', updateValidationState, true);
-            form.addEventListener('change', updateValidationState, true);
-            form.addEventListener('click', (event) => {
-                const clickedButton = event.target.closest && event.target.closest('button');
-                if (clickedButton === submitButton && invalidInputs().length) {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    updateValidationState();
-                }
-            }, true);
-            updateValidationState();
-        }
-        </script>
-        """,
-        height=0,
-        width=0,
-    )
-
     if add_record:
-        manual_record = {
+        st.session_state.manual_records.append({
             "Age": m_age, "Gender": m_gender, "Blood Pressure": m_bp, "Cholesterol Level": m_chol,
             "Exercise Habits": m_exercise, "Smoking": m_smoking, "Family Heart Disease": m_family,
             "Diabetes": m_diabetes, "BMI": m_bmi, "High Blood Pressure": m_hbp,
@@ -250,16 +175,8 @@ with st.sidebar.expander("➕ Add a patient record manually"):
             "Alcohol Consumption": m_alcohol, "Stress Level": m_stress, "Sleep Hours": m_sleep,
             "Sugar Consumption": m_sugar, "Triglyceride Level": m_trig, "Fasting Blood Sugar": m_fbs,
             "CRP Level": m_crp, "Homocysteine Level": m_homo, "Heart Disease Status": m_status,
-        }
-        validation_errors = validate_manual_record(manual_record)
-
-        if validation_errors:
-            st.error("Record was not added. Please correct the following:")
-            for error in validation_errors:
-                st.write(f"- {error}")
-        else:
-            st.session_state.manual_records.append(manual_record)
-            st.success("Added — it's now included in every tab below.")
+        })
+        st.success("Added — it's now included in every tab below.")
 
     if st.session_state.manual_records:
         st.caption(f"{len(st.session_state.manual_records)} manually entered record(s) this session.")
