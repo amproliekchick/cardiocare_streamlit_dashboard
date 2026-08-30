@@ -1,0 +1,178 @@
+{
+  "top_features": [
+    "BMI",
+    "Gender",
+    "Blood Pressure",
+    "Stress Level",
+    "Age",
+    "Homocysteine Level",
+    "High LDL Cholesterol",
+    "Family Heart Disease",
+    "Sugar Consumption",
+    "CRP Level"
+  ],
+  "models": {
+    "Random Forest": {
+      "test_accuracy": 0.796,
+      "test_log_loss": 0.5218027383466339,
+      "test_auc": 0.52277578125,
+      "cv_mean": 0.7984375000000001,
+      "best_params": {
+        "n_estimators": 150,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "max_depth": null,
+        "class_weight": "balanced",
+        "bootstrap": false
+      },
+      "confusion_matrix": [
+        [
+          1591,
+          9
+        ],
+        [
+          399,
+          1
+        ]
+      ],
+      "precision": {
+        "No": 0.799497487437186,
+        "Yes": 0.1
+      },
+      "recall": {
+        "No": 0.994375,
+        "Yes": 0.0025
+      },
+      "f1": {
+        "No": 0.8863509749303621,
+        "Yes": 0.004878048780487805
+      },
+      "feature_importances": {
+        "BMI": 0.18834944997258107,
+        "Gender": 0.024576002785958635,
+        "Blood Pressure": 0.15110620516147602,
+        "Stress Level": 0.030616217121949015,
+        "Age": 0.15267039843697838,
+        "Homocysteine Level": 0.18979490696854856,
+        "High LDL Cholesterol": 0.021831187850828077,
+        "Family Heart Disease": 0.02214782675318855,
+        "Sugar Consumption": 0.03607839296896904,
+        "CRP Level": 0.18282941197952274
+      }
+    },
+    "Logistic Regression": {
+      "test_accuracy": 0.5055,
+      "test_log_loss": 0.6956312281456785,
+      "test_auc": 0.49245781250000004,
+      "cv_mean": 0.8,
+      "best_params": {
+        "C": 10,
+        "class_weight": "balanced",
+        "penalty": "l2",
+        "solver": "lbfgs"
+      },
+      "confusion_matrix": [
+        [
+          811,
+          789
+        ],
+        [
+          200,
+          200
+        ]
+      ],
+      "precision": {
+        "No": 0.8021760633036598,
+        "Yes": 0.20222446916076844
+      },
+      "recall": {
+        "No": 0.506875,
+        "Yes": 0.5
+      },
+      "f1": {
+        "No": 0.6212179241669858,
+        "Yes": 0.28797696184305255
+      },
+      "coefficients": {
+        "BMI": 0.06881223219650702,
+        "Gender": 0.020797614346955297,
+        "Blood Pressure": -0.040101803928722764,
+        "Stress Level": 0.0432025876670263,
+        "Age": -0.036260797010380076,
+        "Homocysteine Level": 0.01928223413144765,
+        "High LDL Cholesterol": 0.04983185967108667,
+        "Family Heart Disease": -0.04960938352921374,
+        "Sugar Consumption": 0.03284220171081785,
+        "CRP Level": -0.016240283786458535
+      }
+    },
+    "Naive Bayes": {
+      "test_accuracy": 0.8,
+      "test_log_loss": 0.5009742119964652,
+      "test_auc": 0.49415624999999996,
+      "cv_mean": 0.8,
+      "best_params": {
+        "var_smoothing": 1.0
+      },
+      "confusion_matrix": [
+        [
+          1600,
+          0
+        ],
+        [
+          400,
+          0
+        ]
+      ],
+      "precision": {
+        "No": 0.8,
+        "Yes": 0.0
+      },
+      "recall": {
+        "No": 1.0,
+        "Yes": 0.0
+      },
+      "f1": {
+        "No": 0.8888888888888888,
+        "Yes": 0.0
+      }
+    },
+    "Neural Network": {
+      "test_accuracy": 0.777,
+      "test_log_loss": 0.5657451695778662,
+      "test_auc": 0.5160546875,
+      "cv_mean": 0.77125,
+      "best_params": {
+        "learning_rate_init": 0.01,
+        "hidden_layer_sizes": [
+          64
+        ],
+        "alpha": 0.0001,
+        "activation": "relu"
+      },
+      "confusion_matrix": [
+        [
+          1537,
+          63
+        ],
+        [
+          383,
+          17
+        ]
+      ],
+      "precision": {
+        "No": 0.8005208333333333,
+        "Yes": 0.2125
+      },
+      "recall": {
+        "No": 0.960625,
+        "Yes": 0.0425
+      },
+      "f1": {
+        "No": 0.8732954545454545,
+        "Yes": 0.07083333333333333
+      }
+    }
+  }
+}
