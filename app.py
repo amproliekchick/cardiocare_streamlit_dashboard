@@ -51,6 +51,18 @@ ORDINAL_MAP = {"Low": 0, "Medium": 1, "High": 2}
 BINARY_MAP_COLS = ["Smoking", "Family Heart Disease", "Diabetes", "High Blood Pressure",
                     "Low HDL Cholesterol", "High LDL Cholesterol"]
 
+MANUAL_NUMERIC_LIMITS = {
+    "Age": (18, 100),
+    "Blood Pressure": (80, 220),
+    "Cholesterol Level": (100, 400),
+    "BMI": (15.0, 45.0),
+    "Sleep Hours": (3.0, 12.0),
+    "Triglyceride Level": (50, 600),
+    "Fasting Blood Sugar": (60, 300),
+    "CRP Level": (0.0, 20.0),
+    "Homocysteine Level": (3.0, 25.0),
+}
+
 
 # --------------------------------------------------------------------------------------
 # Cached loaders
@@ -98,6 +110,22 @@ def encode_for_model(row: dict) -> pd.DataFrame:
         else:
             encoded[col] = val
     return pd.DataFrame([encoded])
+
+
+def validate_manual_record(record: dict) -> list[str]:
+    """Return clear validation messages for invalid manual numeric inputs."""
+    errors = []
+    for field, (minimum, maximum) in MANUAL_NUMERIC_LIMITS.items():
+        value = record[field]
+        if value == -1:
+            errors.append(
+                f"{field} cannot be -1. Enter a value from {minimum} to {maximum}."
+            )
+        elif not minimum <= value <= maximum:
+            errors.append(
+                f"{field} must be between {minimum} and {maximum}; you entered {value}."
+            )
+    return errors
 
 
 model, scaler, FEATURES = load_model()
