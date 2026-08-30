@@ -27,6 +27,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 
 # --------------------------------------------------------------------------------------
 # Page config & constants
@@ -149,30 +150,96 @@ if "manual_records" not in st.session_state:
     st.session_state.manual_records = []
 
 with st.sidebar.expander("➕ Add a patient record manually"):
-    st.caption("All numeric values are checked when you add the record.")
     with st.form("manual_entry_form", clear_on_submit=False):
-        m_age = st.number_input("Age", value=50, step=1)
+        m_age = st.number_input("Age", min_value=18, max_value=100, value=50, step=1)
         m_gender = st.selectbox("Gender", ["Male", "Female"])
-        m_bp = st.number_input("Blood Pressure", value=130, step=1)
-        m_chol = st.number_input("Cholesterol Level", value=200, step=1)
+        m_bp = st.number_input("Blood Pressure", min_value=80, max_value=220, value=130, step=1)
+        m_chol = st.number_input("Cholesterol Level", min_value=100, max_value=400, value=200, step=1)
         m_exercise = st.selectbox("Exercise Habits", ["Low", "Medium", "High"], index=1)
         m_smoking = st.selectbox("Smoking", ["No", "Yes"])
         m_family = st.selectbox("Family Heart Disease", ["No", "Yes"])
         m_diabetes = st.selectbox("Diabetes", ["No", "Yes"])
-        m_bmi = st.number_input("BMI", value=25.0, step=0.1)
+        m_bmi = st.number_input("BMI", min_value=15.0, max_value=45.0, value=25.0, step=0.1)
         m_hbp = st.selectbox("High Blood Pressure", ["No", "Yes"])
         m_low_hdl = st.selectbox("Low HDL Cholesterol", ["No", "Yes"])
         m_high_ldl = st.selectbox("High LDL Cholesterol", ["No", "Yes"])
         m_alcohol = st.selectbox("Alcohol Consumption", ["Low", "Medium", "High"], index=1)
         m_stress = st.selectbox("Stress Level", ["Low", "Medium", "High"], index=1)
-        m_sleep = st.number_input("Sleep Hours", value=7.0, step=0.1)
+        m_sleep = st.number_input("Sleep Hours", min_value=3.0, max_value=12.0, value=7.0, step=0.1)
         m_sugar = st.selectbox("Sugar Consumption", ["Low", "Medium", "High"], index=1)
-        m_trig = st.number_input("Triglyceride Level", value=150, step=1)
-        m_fbs = st.number_input("Fasting Blood Sugar", value=100, step=1)
-        m_crp = st.number_input("CRP Level", value=3.0, step=0.1)
-        m_homo = st.number_input("Homocysteine Level", value=10.0, step=0.1)
+        m_trig = st.number_input("Triglyceride Level", min_value=50, max_value=600, value=150, step=1)
+        m_fbs = st.number_input("Fasting Blood Sugar", min_value=60, max_value=300, value=100, step=1)
+        m_crp = st.number_input("CRP Level", min_value=0.0, max_value=20.0, value=3.0, step=0.1)
+        m_homo = st.number_input("Homocysteine Level", min_value=3.0, max_value=25.0, value=10.0, step=0.1)
         m_status = st.selectbox("Heart Disease Status (if known)", ["No", "Yes"])
         add_record = st.form_submit_button("Add record to dataset")
+
+    # The browser marks a value outside number_input's min/max limits with a red !,
+    # but it sends Streamlit the previous valid value. Block submission in that case
+    # so that previous/default value can never be added as a new record.
+    components.html(
+        """
+        <script>
+        const parentDocument = window.parent.document;
+        const form = Array.from(parentDocument.querySelectorAll('[data-testid="stForm"]'))
+            .find((item) => item.innerText.includes('Add record to dataset'));
+
+        if (form && !form.dataset.manualRecordValidationBound) {
+            form.dataset.manualRecordValidationBound = 'true';
+            const submitButton = Array.from(form.querySelectorAll('button'))
+                .find((button) => button.innerText.includes('Add record to dataset'));
+            const notice = parentDocument.createElement('div');
+            notice.setAttribute('role', 'alert');
+            notice.style.cssText = [
+                'display:none', 'margin-top:0.5rem', 'padding:0.65rem',
+                'border:1px solid #ff4b4b', 'border-radius:0.35rem',
+                'color:#ff4b4b', 'font-size:0.85rem'
+            ].join(';');
+            form.appendChild(notice);
+
+            const invalidInputs = () => Array.from(form.querySelectorAll('input[type="number"]'))
+                .filter((input) => !input.validity.valid);
+            const fieldName = (input) => input.getAttribute('aria-label') || 'A numeric field';
+
+            const updateValidationState = () => {
+                const invalid = invalidInputs();
+                if (submitButton) submitButton.disabled = invalid.length > 0;
+
+                if (!invalid.length) {
+                    notice.style.display = 'none';
+                    notice.replaceChildren();
+                    return;
+                }
+
+                notice.style.display = 'block';
+                notice.replaceChildren('Record was not added. Please correct:');
+                const reasons = parentDocument.createElement('ul');
+                reasons.style.margin = '0.35rem 0 0 1.15rem';
+                invalid.forEach((input) => {
+                    const item = parentDocument.createElement('li');
+                    item.textContent = `${fieldName(input)} must be between ${input.min} and ${input.max}.`;
+                    reasons.appendChild(item);
+                });
+                notice.appendChild(reasons);
+            };
+
+            form.addEventListener('input', updateValidationState, true);
+            form.addEventListener('change', updateValidationState, true);
+            form.addEventListener('click', (event) => {
+                const clickedButton = event.target.closest && event.target.closest('button');
+                if (clickedButton === submitButton && invalidInputs().length) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    updateValidationState();
+                }
+            }, true);
+            updateValidationState();
+        }
+        </script>
+        """,
+        height=0,
+        width=0,
+    )
 
     if add_record:
         manual_record = {
