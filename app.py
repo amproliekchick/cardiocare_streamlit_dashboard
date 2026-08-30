@@ -109,16 +109,67 @@ metrics = load_metrics()
 st.sidebar.title("\u2764\ufe0f CardioCare Dashboard")
 st.sidebar.caption("Heart Disease Risk Analytics \u2014 BMDS2003 Deployment Prototype")
 
-st.sidebar.header("1. Data Input")
+st.sidebar.header("Data Input")
 uploaded_file = st.sidebar.file_uploader(
     "Upload a heart disease CSV (optional)", type=["csv"],
     help="Must contain the same 20 feature columns as the CardioCare dataset. "
          "If you don't upload a file, the bundled 10,000-patient dataset is used.",
 )
-raw_df = pd.read_csv(uploaded_file) if uploaded_file is not None else load_default_data()
+base_df = pd.read_csv(uploaded_file) if uploaded_file is not None else load_default_data()
+
+if "manual_records" not in st.session_state:
+    st.session_state.manual_records = []
+
+with st.sidebar.expander("➕ Add a patient record manually"):
+    with st.form("manual_entry_form", clear_on_submit=True):
+        m_age = st.number_input("Age", 18, 100, 50)
+        m_gender = st.selectbox("Gender", ["Male", "Female"])
+        m_bp = st.number_input("Blood Pressure", 80, 220, 130)
+        m_chol = st.number_input("Cholesterol Level", 100, 400, 200)
+        m_exercise = st.selectbox("Exercise Habits", ["Low", "Medium", "High"], index=1)
+        m_smoking = st.selectbox("Smoking", ["No", "Yes"])
+        m_family = st.selectbox("Family Heart Disease", ["No", "Yes"])
+        m_diabetes = st.selectbox("Diabetes", ["No", "Yes"])
+        m_bmi = st.number_input("BMI", 15.0, 45.0, 25.0, 0.1)
+        m_hbp = st.selectbox("High Blood Pressure", ["No", "Yes"])
+        m_low_hdl = st.selectbox("Low HDL Cholesterol", ["No", "Yes"])
+        m_high_ldl = st.selectbox("High LDL Cholesterol", ["No", "Yes"])
+        m_alcohol = st.selectbox("Alcohol Consumption", ["Low", "Medium", "High"], index=1)
+        m_stress = st.selectbox("Stress Level", ["Low", "Medium", "High"], index=1)
+        m_sleep = st.number_input("Sleep Hours", 3.0, 12.0, 7.0, 0.1)
+        m_sugar = st.selectbox("Sugar Consumption", ["Low", "Medium", "High"], index=1)
+        m_trig = st.number_input("Triglyceride Level", 50, 600, 150)
+        m_fbs = st.number_input("Fasting Blood Sugar", 60, 300, 100)
+        m_crp = st.number_input("CRP Level", 0.0, 20.0, 3.0, 0.1)
+        m_homo = st.number_input("Homocysteine Level", 3.0, 25.0, 10.0, 0.1)
+        m_status = st.selectbox("Heart Disease Status (if known)", ["No", "Yes"])
+        add_record = st.form_submit_button("Add record to dataset")
+
+    if add_record:
+        st.session_state.manual_records.append({
+            "Age": m_age, "Gender": m_gender, "Blood Pressure": m_bp, "Cholesterol Level": m_chol,
+            "Exercise Habits": m_exercise, "Smoking": m_smoking, "Family Heart Disease": m_family,
+            "Diabetes": m_diabetes, "BMI": m_bmi, "High Blood Pressure": m_hbp,
+            "Low HDL Cholesterol": m_low_hdl, "High LDL Cholesterol": m_high_ldl,
+            "Alcohol Consumption": m_alcohol, "Stress Level": m_stress, "Sleep Hours": m_sleep,
+            "Sugar Consumption": m_sugar, "Triglyceride Level": m_trig, "Fasting Blood Sugar": m_fbs,
+            "CRP Level": m_crp, "Homocysteine Level": m_homo, "Heart Disease Status": m_status,
+        })
+        st.success("Added — it's now included in every tab below.")
+
+    if st.session_state.manual_records:
+        st.caption(f"{len(st.session_state.manual_records)} manually entered record(s) this session.")
+        if st.button("Clear manual records"):
+            st.session_state.manual_records = []
+            st.rerun()
+
+if st.session_state.manual_records:
+    raw_df = pd.concat([base_df, pd.DataFrame(st.session_state.manual_records)], ignore_index=True)
+else:
+    raw_df = base_df
 df = clean_data(raw_df)
 
-st.sidebar.header("8. Customisation")
+st.sidebar.header("Customisation")
 color_theme = st.sidebar.selectbox(
     "Chart color theme", ["Blues", "Reds", "Viridis", "Teal", "Purples", "Oranges"], index=0
 )
