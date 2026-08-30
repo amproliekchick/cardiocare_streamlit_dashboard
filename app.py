@@ -174,7 +174,7 @@ with st.sidebar.expander("➕ Add a patient record manually"):
         add_record = st.form_submit_button("Add record to dataset")
 
     if add_record:
-        st.session_state.manual_records.append({
+        manual_record = {
             "Age": m_age, "Gender": m_gender, "Blood Pressure": m_bp, "Cholesterol Level": m_chol,
             "Exercise Habits": m_exercise, "Smoking": m_smoking, "Family Heart Disease": m_family,
             "Diabetes": m_diabetes, "BMI": m_bmi, "High Blood Pressure": m_hbp,
@@ -182,8 +182,16 @@ with st.sidebar.expander("➕ Add a patient record manually"):
             "Alcohol Consumption": m_alcohol, "Stress Level": m_stress, "Sleep Hours": m_sleep,
             "Sugar Consumption": m_sugar, "Triglyceride Level": m_trig, "Fasting Blood Sugar": m_fbs,
             "CRP Level": m_crp, "Homocysteine Level": m_homo, "Heart Disease Status": m_status,
-        })
-        st.success("Added — it's now included in every tab below.")
+        }
+        validation_errors = validate_manual_record(manual_record)
+
+        if validation_errors:
+            st.error("Record was not added. Please correct the following:")
+            for error in validation_errors:
+                st.write(f"- {error}")
+        else:
+            st.session_state.manual_records.append(manual_record)
+            st.success("Added — it's now included in every tab below.")
 
     if st.session_state.manual_records:
         st.caption(f"{len(st.session_state.manual_records)} manually entered record(s) this session.")
