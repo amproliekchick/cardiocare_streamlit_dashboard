@@ -149,27 +149,28 @@ if "manual_records" not in st.session_state:
     st.session_state.manual_records = []
 
 with st.sidebar.expander("➕ Add a patient record manually"):
-    with st.form("manual_entry_form", clear_on_submit=True):
-        m_age = st.number_input("Age", 18, 100, 50)
+    st.caption("All numeric values are checked when you add the record.")
+    with st.form("manual_entry_form", clear_on_submit=False):
+        m_age = st.number_input("Age", value=50, step=1)
         m_gender = st.selectbox("Gender", ["Male", "Female"])
-        m_bp = st.number_input("Blood Pressure", 80, 220, 130)
-        m_chol = st.number_input("Cholesterol Level", 100, 400, 200)
+        m_bp = st.number_input("Blood Pressure", value=130, step=1)
+        m_chol = st.number_input("Cholesterol Level", value=200, step=1)
         m_exercise = st.selectbox("Exercise Habits", ["Low", "Medium", "High"], index=1)
         m_smoking = st.selectbox("Smoking", ["No", "Yes"])
         m_family = st.selectbox("Family Heart Disease", ["No", "Yes"])
         m_diabetes = st.selectbox("Diabetes", ["No", "Yes"])
-        m_bmi = st.number_input("BMI", 15.0, 45.0, 25.0, 0.1)
+        m_bmi = st.number_input("BMI", value=25.0, step=0.1)
         m_hbp = st.selectbox("High Blood Pressure", ["No", "Yes"])
         m_low_hdl = st.selectbox("Low HDL Cholesterol", ["No", "Yes"])
         m_high_ldl = st.selectbox("High LDL Cholesterol", ["No", "Yes"])
         m_alcohol = st.selectbox("Alcohol Consumption", ["Low", "Medium", "High"], index=1)
         m_stress = st.selectbox("Stress Level", ["Low", "Medium", "High"], index=1)
-        m_sleep = st.number_input("Sleep Hours", 3.0, 12.0, 7.0, 0.1)
+        m_sleep = st.number_input("Sleep Hours", value=7.0, step=0.1)
         m_sugar = st.selectbox("Sugar Consumption", ["Low", "Medium", "High"], index=1)
-        m_trig = st.number_input("Triglyceride Level", 50, 600, 150)
-        m_fbs = st.number_input("Fasting Blood Sugar", 60, 300, 100)
-        m_crp = st.number_input("CRP Level", 0.0, 20.0, 3.0, 0.1)
-        m_homo = st.number_input("Homocysteine Level", 3.0, 25.0, 10.0, 0.1)
+        m_trig = st.number_input("Triglyceride Level", value=150, step=1)
+        m_fbs = st.number_input("Fasting Blood Sugar", value=100, step=1)
+        m_crp = st.number_input("CRP Level", value=3.0, step=0.1)
+        m_homo = st.number_input("Homocysteine Level", value=10.0, step=0.1)
         m_status = st.selectbox("Heart Disease Status (if known)", ["No", "Yes"])
         add_record = st.form_submit_button("Add record to dataset")
 
